@@ -82,7 +82,8 @@ class Connect4Model:
     def load(self, config_path, weight_path):
         mc = self.config.model
         resources = self.config.resource
-        if mc.distributed and config_path == resources.model_best_config_path:
+        #if mc.distributed and config_path == resources.model_best_config_path:
+        if hasattr(mc, "distributed") and mc.distributed == True and config_path == resources.model_best_config_path:
             logger.debug(f"loading model from server")
             ftp_connection = ftplib.FTP(resources.model_best_distributed_ftp_server,
                                         resources.model_best_distributed_ftp_user,
