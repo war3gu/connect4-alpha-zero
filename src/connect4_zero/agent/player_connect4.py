@@ -53,7 +53,7 @@ class Connect4Player:
                              f"value move=({action_by_value % 8}, {action_by_value // 8})")
             self.search_moves(board)
             policy = self.calc_policy(board)
-            action = int(np.random.choice(range(self.labels_n), p=policy))
+            action = int(np.random.choice(range(self.labels_n), p=policy))   #p is weight, choose action by weight.
             action_by_value = int(np.argmax(self.var_q[key] + (self.var_n[key] > 0)*100))
             if action == action_by_value or env.turn < self.play_config.change_tau_turn:
                 break
