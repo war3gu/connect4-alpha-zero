@@ -36,6 +36,7 @@ class Connect4Player:
         self.prediction_queue = Queue(self.play_config.prediction_queue_size)
         self.sem = asyncio.Semaphore(self.play_config.parallel_search_num)
 
+
         self.moves = []
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
