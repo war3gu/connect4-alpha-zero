@@ -147,8 +147,8 @@ class Connect4Player:
         black_ary, white_ary = env.black_and_white_plane()
         state = [black_ary, white_ary] if env.player_turn() == Player.black else [white_ary, black_ary]
         future = await self.predict(np.array(state))  # type: Future
-        await future
-        leaf_p, leaf_v = future.result()
+        await future      # wait future end
+        leaf_p, leaf_v = future.result()   #get future result
 
         self.var_p[key] = leaf_p  # P is value for next_player (black or white)
         self.expanded.add(key)
@@ -174,7 +174,7 @@ class Connect4Player:
             data = np.array([x.state for x in item_list])
             policy_ary, value_ary = self.api.predict(data)
             for p, v, item in zip(policy_ary, value_ary, item_list):
-                item.future.set_result((p, v))
+                item.future.set_result((p, v))    # set future result
 
     async def predict(self, x):
         future = self.loop.create_future()
