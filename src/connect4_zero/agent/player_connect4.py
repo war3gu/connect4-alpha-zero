@@ -26,11 +26,11 @@ class Connect4Player:
         self.api = Connect4ModelAPI(self.config, self.model)
 
         self.labels_n = config.n_labels
-        self.var_n = defaultdict(lambda: np.zeros((self.labels_n,)))
-        self.var_w = defaultdict(lambda: np.zeros((self.labels_n,)))
-        self.var_q = defaultdict(lambda: np.zeros((self.labels_n,)))
-        self.var_u = defaultdict(lambda: np.zeros((self.labels_n,)))
-        self.var_p = defaultdict(lambda: np.zeros((self.labels_n,)))
+        self.var_n = defaultdict(lambda: np.zeros((self.labels_n,)))      #number
+        self.var_w = defaultdict(lambda: np.zeros((self.labels_n,)))      #win
+        self.var_q = defaultdict(lambda: np.zeros((self.labels_n,)))      #Q(s,a)
+        #self.var_u = defaultdict(lambda: np.zeros((self.labels_n,)))
+        self.var_p = defaultdict(lambda: np.zeros((self.labels_n,)))      #probability
         self.expanded = set()
         self.now_expanding = set()
         self.prediction_queue = Queue(self.play_config.prediction_queue_size)
@@ -121,7 +121,7 @@ class Connect4Player:
         action_t = self.select_action_q_and_u(env, is_root_node)
         _, _ = env.step(action_t)
 
-        virtual_loss = self.config.play.virtual_loss
+        virtual_loss = self.config.play.virtual_loss    #进一步探索之前，使用virtual_loss降低当前路径被再次探索的概率
         self.var_n[key][action_t] += virtual_loss
         self.var_w[key][action_t] -= virtual_loss
         leaf_v = await self.search_my_move(env)  # next move
@@ -130,7 +130,7 @@ class Connect4Player:
         # update: N, W, Q, U
         n = self.var_n[key][action_t] = self.var_n[key][action_t] - virtual_loss + 1
         w = self.var_w[key][action_t] = self.var_w[key][action_t] + virtual_loss + leaf_v
-        self.var_q[key][action_t] = w / n
+        self.var_q[key][action_t] = w / n   #备份Q(s,a)
         return leaf_v
 
     async def expand_and_evaluate(self, env):
@@ -147,7 +147,7 @@ class Connect4Player:
         black_ary, white_ary = env.black_and_white_plane()
         state = [black_ary, white_ary] if env.player_turn() == Player.black else [white_ary, black_ary]
         future = await self.predict(np.array(state))  # type: Future
-        await future      # wait future end
+        await future      # wait future end until set_result is called
         leaf_p, leaf_v = future.result()   #get future result
 
         self.var_p[key] = leaf_p  # P is value for next_player (black or white)
@@ -224,7 +224,7 @@ class Connect4Player:
             p_ = (1 - self.play_config.noise_eps) * p_ + \
                  self.play_config.noise_eps * np.random.dirichlet([self.play_config.dirichlet_alpha] * self.labels_n)
 
-        u_ = self.play_config.c_puct * p_ * xx_ / (1 + self.var_n[key])
+        u_ = self.play_config.c_puct * p_ * xx_ / (1 + self.var_n[key])  #under paper
         if env.player_turn() == Player.white:
             v_ = (self.var_q[key] + u_ + 1000) * legal_moves
         else:
